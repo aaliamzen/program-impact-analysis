@@ -27,6 +27,7 @@ likert_labels = {
     '4': 'Well developed'
 }
 
+
 # Domain-specific color palettes
 color_maps = {
     0: {  # Domain 1 (e.g., Instructional Skills)
