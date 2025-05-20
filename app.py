@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import numpy as np
 
 # Streamlit app configuration
 st.set_page_config(page_title="Teaching Competency Analysis", layout="wide")
@@ -100,32 +99,19 @@ if uploaded_file:
         df = df[df['Competency'].isin(valid_competencies)]
         competencies = df[['Comptnum', 'Competency']].drop_duplicates().sort_values('Comptnum')
         domains = df['Domain'].unique()
+        valid_terms = [1, 2, 3]
         
-        # Dynamically extract valid terms from the data
-        # First, check for non-numeric values in the Term column
-        term_values = df['Term'].dropna()
-        try:
-            # Convert to float first to handle both integers and floats, then to int
-            term_values_numeric = term_values.astype(float)
-            # Check if all values are whole numbers (i.e., integers)
-            if not (term_values_numeric == term_values_numeric.astype(int)).all():
-                st.error("Term column must contain only integer values (no decimals)")
-            else:
-                valid_terms = sorted(term_values_numeric.astype(int).unique())
-                # Check if all terms are positive
-                if not all(term > 0 for term in valid_terms):
-                    st.error("Term column must contain only positive integers")
-                elif df.empty:
-                    st.error("No valid competencies with counts found in the dataset.")
-                else:
-                    # Store processed data in session state
-                    st.session_state['df'] = df
-                    st.session_state['competencies'] = competencies
-                    st.session_state['domains'] = domains
-                    st.session_state['excluded_competencies'] = excluded_competencies
-                    st.session_state['valid_terms'] = valid_terms
-        except (ValueError, TypeError) as e:
-            st.error(f"Term column contains non-numeric values or cannot be converted to integers: {str(e)}")
+        if not all(df['Term'].isin(valid_terms)):
+            st.error("Term column must contain only: 1, 2, 3")
+        elif df.empty:
+            st.error("No valid competencies with counts found in the dataset.")
+        else:
+            # Store processed data in session state
+            st.session_state['df'] = df
+            st.session_state['competencies'] = competencies
+            st.session_state['domains'] = domains
+            st.session_state['excluded_competencies'] = excluded_competencies
+            st.session_state['valid_terms'] = valid_terms
 
 # Check if data is available in session state
 if 'df' not in st.session_state:
