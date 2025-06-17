@@ -19,40 +19,57 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Likert scale labels
-likert_labels = {
+# Default Likert labels
+default_likert_labels = {
     '1': 'Not developed',
     '2': 'Developing towards',
     '3': 'Developed',
     '4': 'Well developed'
 }
 
+# Sidebar for file upload and custom Likert labels
+st.sidebar.title("Data Upload")
+uploaded_file = st.sidebar.file_uploader("Upload Excel file", type=["xlsx", "xls"])
+
+st.sidebar.title("Custom Likert Labels")
+label1 = st.sidebar.text_input("Label for Rating 1", value=default_likert_labels['1'])
+label2 = st.sidebar.text_input("Label for Rating 2", value=default_likert_labels['2'])
+label3 = st.sidebar.text_input("Label for Rating 3", value=default_likert_labels['3'])
+label4 = st.sidebar.text_input("Label for Rating 4", value=default_likert_labels['4'])
+
+# Dynamically create likert_labels based on user input
+likert_labels = {
+    '1': label1 if label1 else default_likert_labels['1'],
+    '2': label2 if label2 else default_likert_labels['2'],
+    '3': label3 if label3 else default_likert_labels['3'],
+    '4': label4 if label4 else default_likert_labels['4']
+}
 
 # Domain-specific color palettes
 color_maps = {
     0: {  # Domain 1 (e.g., Instructional Skills)
-        'Not developed': '#E6F5F6',
-        'Developing towards': '#C8EAED',
-        'Developed': '#A6E0E4',
-        'Well developed': '#83D5DA'
+        likert_labels['1']: '#E6F5F6',
+        likert_labels['2']: '#C8EAED',
+        likert_labels['3']: '#A6E0E4',
+        likert_labels['4']: '#83D5DA'
     },
     1: {  # Domain 2 (e.g., Management Skills)
-        'Not developed': '#D8DEEF',
-        'Developing towards': '#A8B5DB',
-        'Developed': '#728AC3',
-        'Well developed': '#334F9E'
+        likert_labels['1']: '#D8DEEF',
+        likert_labels['2']: '#A8B5DB',
+        likert_labels['3']: '#728AC3',
+        likert_labels['4']: '#334F9E'
     },
     2: {  # Domain 3 (darker lime green)
-        'Not developed': '#E8F5C8',
-        'Developing towards': '#D6F0A0',
-        'Developed': '#C2EA75',
-        'Well developed': '#B8E34D'
+        likert_labels['1']: '#E8F5C8',
+        likert_labels['2']: '#D6F0A0',
+        likert_labels['3']: '#C2EA75',
+        likert_labels['4']: '#B8E34D'
     },
     3: {  # Domain 4
-        'Not developed': '#ECE9F8',
-        'Developing towards': '#DAD3F1',
-        'Developed': '#C8BCE9',
-        'Well developed': '#B2A5E4'
+        likert_labels['1']: '#ECE9F8',
+        likert_labels['2']: '#DAD3F1',
+        likert_labels['3']: '#C8BCE9',
+        likert_labels['4']: '#B2A5E4'
     }
 }
 
@@ -76,10 +93,6 @@ def wrap_text(text, width=30):
     if current_line:
         lines.append(" ".join(current_line))
     return "<br>".join(lines)
-
-# Sidebar for file upload
-st.sidebar.title("Data Upload")
-uploaded_file = st.sidebar.file_uploader("Upload Excel file", type=["xlsx", "xls"])
 
 # Process uploaded file and store in session state
 if uploaded_file:
@@ -209,3 +222,75 @@ else:
         fig.update_xaxes(type='multicategory')
         
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Interpretation of the Chart
+        st.subheader(f"Interpretation of Competency Ratings for {domain}")
+        # Calculate average ratings by term and Likert value
+        avg_ratings = plot_df.groupby(['Term', 'Likert Value'])['Percentage'].mean().unstack().fillna(0)
+        
+        # Initialize bullet points
+        insights = []
+        
+        # Insight 1: Trend in "Well developed" ratings across terms
+        well_developed = avg_ratings.get(likert_labels['4'], pd.Series(0))
+        if len(well_developed) > 1:
+            first_term = well_developed.index[0]
+            last_term = well_developed.index[-1]
+            change = well_developed[last_term] - well_developed[first_term]
+            if change > 0:
+                insights.append(f"- **Improvement in '{likert_labels['4']}' ratings**: The average percentage of '{likert_labels['4']}' ratings increased by {change:.1f}% from {first_term} ({well_developed[first_term]:.1f}%) to {last_term} ({well_developed[last_term]:.1f}%).")
+            elif change < 0:
+                insights.append(f"- **Decline in '{likert_labels['4']}' ratings**: The average percentage of '{likert_labels['4']}' ratings decreased by {abs(change):.1f}% from {first_term} ({well_developed[first_term]:.1f}%) to {last_term} ({well_developed[last_term]:.1f}%).")
+            else:
+                insights.append(f"- **Stable '{likert_labels['4']}' ratings**: The average percentage of '{likert_labels['4']}' ratings remained steady at {well_developed[first_term]:.1f}% from {first_term} to {last_term}.")
+        
+        # Insight 2: Dominant rating category in the latest term
+        latest_term = plot_df['Term'].max()
+        latest_ratings = avg_ratings.loc[latest_term]
+        dominant_rating = latest_ratings.idxmax()
+        dominant_percentage = latest_ratings[dominant_rating]
+        insights.append(f"- **Dominant rating in {latest_term}**: '{dominant_rating}' is the most common rating, averaging {dominant_percentage:.1f}% across competencies.")
+        
+        # Insight 3: Competency with the highest "Well developed" rating in the latest term
+        latest_term_data = plot_df[plot_df['Term'] == latest_term]
+        well_developed_data = latest_term_data[latest_term_data['Likert Value'] == likert_labels['4']]
+        if not well_developed_data.empty:
+            top_competency = well_developed_data.loc[well_developed_data['Percentage'].idxmax()]
+            insights.append(f"- **Top performer in {latest_term}**: '{top_competency['Competency']}' has the highest '{likert_labels['4']}' rating at {top_competency['Percentage']:.1f}%.")
+        
+        # Insight 4: Largest improvement in reducing "Not developed" ratings
+        not_developed = avg_ratings.get(likert_labels['1'], pd.Series(0))
+        if len(not_developed) > 1:
+            first_term = not_developed.index[0]
+            last_term = not_developed.index[-1]
+            reduction = not_developed[first_term] - not_developed[last_term]
+            if reduction > 10:  # Only highlight significant reductions (>10%)
+                # Find the competency with the largest reduction
+                not_developed_pivot = plot_df[plot_df['Likert Value'] == likert_labels['1']].pivot(index='Competency', columns='Term', values='Percentage').fillna(0)
+                if first_term in not_developed_pivot.columns and last_term in not_developed_pivot.columns:
+                    not_developed_pivot['Reduction'] = not_developed_pivot[first_term] - not_developed_pivot[last_term]
+                    if not not_developed_pivot.empty:
+                        top_reducer = not_developed_pivot['Reduction'].idxmax()
+                        reduction_value = not_developed_pivot.loc[top_reducer, 'Reduction']
+                        if reduction_value > 0:
+                            insights.append(f"- **Largest reduction in '{likert_labels['1']}' ratings**: '{top_reducer}' reduced its '{likert_labels['1']}' percentage by {reduction_value:.1f}% from {first_term} to {last_term}.")
+        
+        # Insight 5: Overall trend (if not already covered)
+        if len(insights) < 3 and len(valid_terms) > 1:
+            # Check for overall improvement by looking at the shift from lower to higher ratings
+            lower_ratings = avg_ratings[[likert_labels['1'], likert_labels['2']]].sum(axis=1)
+            higher_ratings = avg_ratings[[likert_labels['3'], likert_labels['4']]].sum(axis=1)
+            first_term = lower_ratings.index[0]
+            last_term = lower_ratings.index[-1]
+            lower_change = lower_ratings[last_term] - lower_ratings[first_term]
+            higher_change = higher_ratings[last_term] - higher_ratings[first_term]
+            if higher_change > 0 and lower_change < 0:
+                insights.append(f"- **Overall improvement**: Higher ratings ('{likert_labels['3']}' and '{likert_labels['4']}') increased by {higher_change:.1f}% on average, while lower ratings ('{likert_labels['1']}' and '{likert_labels['2']}') decreased by {abs(lower_change):.1f}% from {first_term} to {last_term}.")
+        
+        # Ensure at least 3 bullet points by adding a generic insight if needed
+        if len(insights) < 3:
+            insights.append(f"- **Number of terms analyzed**: This domain includes data for {len(valid_terms)} terms ({', '.join([f'Term {t}' for t in valid_terms])}).")
+        
+        # Display the insights (limit to 5 bullet points)
+        for insight in insights[:5]:
+            st.markdown(insight)
