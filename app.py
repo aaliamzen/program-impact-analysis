@@ -45,31 +45,31 @@ likert_labels = {
     '4': label4 if label4 else default_likert_labels['4']
 }
 
-# Domain-specific color palettes
+# Domain-specific color palettes (tied to rating values 1-4)
 color_maps = {
-    0: {  # Domain 1 (e.g., Instructional Skills)
-        likert_labels['1']: '#E6F5F6',
-        likert_labels['2']: '#C8EAED',
-        likert_labels['3']: '#A6E0E4',
-        likert_labels['4']: '#83D5DA'
+    0: {  # Domain 1 (e.g., Instructional Skills) - Cyan palette
+        1: '#E6F5F6',
+        2: '#C8EAED',
+        3: '#A6E0E4',
+        4: '#83D5DA'
     },
-    1: {  # Domain 2 (e.g., Management Skills)
-        likert_labels['1']: '#D8DEEF',
-        likert_labels['2']: '#A8B5DB',
-        likert_labels['3']: '#728AC3',
-        likert_labels['4']: '#334F9E'
+    1: {  # Domain 2 (e.g., Management Skills) - Blue palette
+        1: '#D8DEEF',
+        2: '#A8B5DB',
+        3: '#728AC3',
+        4: '#334F9E'
     },
-    2: {  # Domain 3 (darker lime green)
-        likert_labels['1']: '#E8F5C8',
-        likert_labels['2']: '#D6F0A0',
-        likert_labels['3']: '#C2EA75',
-        likert_labels['4']: '#B8E34D'
+    2: {  # Domain 3 (e.g., Domain 3) - Green palette
+        1: '#E8F5C8',
+        2: '#D6F0A0',
+        3: '#C2EA75',
+        4: '#B8E34D'
     },
-    3: {  # Domain 4
-        likert_labels['1']: '#ECE9F8',
-        likert_labels['2']: '#DAD3F1',
-        likert_labels['3']: '#C8BCE9',
-        likert_labels['4']: '#B2A5E4'
+    3: {  # Domain 4 (e.g., Domain 4) - Purple palette
+        1: '#ECE9F8',
+        2: '#DAD3F1',
+        3: '#C8BCE9',
+        4: '#B2A5E4'
     }
 }
 
@@ -190,12 +190,13 @@ else:
         
         # Create clustered stacked bar chart with data labels
         fig = go.Figure()
-        for value in likert_labels.values():
-            value_data = plot_df[plot_df['Likert Value'] == value]
+        for value in range(1, 5):
+            label = likert_labels[str(value)]
+            value_data = plot_df[plot_df['Likert Value'] == label]
             fig.add_trace(go.Bar(
                 x=[value_data['Competency'], value_data['Term']],
                 y=value_data['Percentage'],
-                name=value,
+                name=label,
                 marker_color=color_maps.get(domain_idx % len(color_maps), color_maps[0])[value],
                 hovertemplate='%{y:.2f}%',
                 text=value_data['Percentage'].apply(lambda x: f"{int(x)}%" if x > 0 else ""),
