@@ -22,7 +22,7 @@ with col1:
 
 with col2:
     try:
-        with open("static/ImpactData_example.xlsx", "rb") as file:
+        with open("ImpactData_example.xlsx", "rb") as file:
             st.download_button(
                 label="⬇️ Download ImpactData_example.xlsx",
                 data=file,
