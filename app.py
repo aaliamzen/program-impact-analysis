@@ -6,6 +6,36 @@ import numpy as np
 # Streamlit app configuration
 st.set_page_config(page_title="Teaching Competency Analysis", layout="wide")
 
+# Streamlit app configuration
+st.set_page_config(page_title="Teaching Competency Analysis", layout="wide")
+
+# ====================== NEW: EXAMPLE FILE DOWNLOAD ======================
+st.markdown("### Example Data File")
+
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    st.markdown("""
+    **Download Example Excel File**  
+    This file contains sample data in the exact format required by the tool (multiple domains, competencies, and terms).
+    """)
+
+with col2:
+    try:
+        with open("static/ImpactData_example.xlsx", "rb") as file:
+            st.download_button(
+                label="⬇️ Download ImpactData_example.xlsx",
+                data=file,
+                file_name="ImpactData_example.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                help="Sample data to test the tool"
+            )
+    except FileNotFoundError:
+        st.error("Example file not found. Please place it in the `static/` folder.")
+
+st.markdown("---")
+# =====================================================================
+
 # Custom CSS to override Streamlit's default table styles (no longer needed, but keeping for consistency)
 st.markdown("""
     <style>
